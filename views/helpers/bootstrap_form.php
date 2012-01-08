@@ -226,7 +226,6 @@ class BootstrapFormHelper extends FormHelper {
 			break;
 			case 'checkbox':
 				$input = $this->checkbox($fieldName, $options);
-				$format = $format ? $format : array('before', 'input', 'after');
 			break;
 			case 'radio':
 				$input = $this->radio($fieldName, $radioOptions, $options);
