@@ -171,7 +171,7 @@ class BootstrapFormHelper extends FormHelper {
 		}
 
 		$label = null;
-		if (isset($options['label']) && $options['type'] !== 'radio' && $options['type'] !== 'checkbox') {
+		if (isset($options['label']) && $options['type'] !== 'radio') {
 			$label = $options['label'];
 			unset($options['label']);
 		}
@@ -182,10 +182,6 @@ class BootstrapFormHelper extends FormHelper {
 				$radioOptions = (array)$options['options'];
 				unset($options['options']);
 			}
-		}
-
-		if ($options['type'] === 'checkbox') {
-			$label = false;
 		}
 
 		if ($label !== false) {
@@ -325,7 +321,6 @@ class BootstrapFormHelper extends FormHelper {
 		) {
 			$options['checked'] = 'checked';
 		}
-		$hidden = '';
 		if ($options['hiddenField']) {
 			$hiddenOptions = array(
 				'id' => $options['id'] . '_', 'name' => $options['name'],
@@ -334,48 +329,19 @@ class BootstrapFormHelper extends FormHelper {
 			if (isset($options['disabled']) && $options['disabled'] == true) {
 				$hiddenOptions['disabled'] = 'disabled';
 			}
-			$hidden = $this->hidden($fieldName, $hiddenOptions);
+			$output = $this->hidden($fieldName, $hiddenOptions);
 		}
 		unset($options['hiddenField']);
 
-		$input =  sprintf(
+		$output =  $output . sprintf(
 			$this->Html->tags['checkbox'],
 			$options['name'],
 			$this->_parseAttributes($options, array('name'), null, ' ')
 		);
 
-		$labelText = null;
-		if (isset($options['label'])) {
-			if (is_array($options['label'])) {
-				$labelText = $options['label']['text'];
-			}
-			else {
-				$labelText = $options['label'];
-			}
-		}
+		$output = $this->label($fieldName, $output, array('for' => $options['id']));
 
-		// Snippet from FormHelper::label() to generate friendly label text
-		// if not provided.
-		if ($labelText === null) {
-			if (strpos($fieldName, '.') !== false) {
-				$labelText = array_pop(explode('.', $fieldName));
-			} else {
-				$labelText = $fieldName;
-			}
-			if (substr($labelText, -3) == '_id') {
-				$labelText = substr($labelText, 0, -3);
-			}
-			$labelText = __(Inflector::humanize(Inflector::underscore($labelText)), true);
-		}
-
-		$labelText = $this->Html->tag('span', $labelText);
-
-		$output = $this->label($fieldName, $input . $labelText, array('for' => $options['id']));
-
-		$output = $this->Html->tag('li', $output);
-		$output = $this->Html->tag('ul', $output, array('class' => 'inputs-list'));
-
-		return $hidden . $output;
+		return $output;
 	}
 
 	// TODO checkbox / radio lists
