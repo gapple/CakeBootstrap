@@ -3,7 +3,11 @@ App::import('Helper', 'Form');
 
 class BootstrapFormHelper extends FormHelper {
 
-	// TODO override $this->Html with BootstrapHtml if necessary
+	var $helpers = array('TwitterBootstrap.BootstrapHtml');
+
+	function beforeRender() {
+		$this->Html = &$this->BootstrapHtml;
+	}
 
 	/**
 	 * Set defaults for Bootstrap structure and pass through to Form::error().
@@ -46,7 +50,7 @@ class BootstrapFormHelper extends FormHelper {
 	 * --After--
 	 * </div>
 	 *
-	 * @see HtmlHelper::input().
+	 * @see FormHelper::input().
 	 */
 	function input($fieldName, $options = array()) {
 		$this->setEntity($fieldName);
@@ -287,5 +291,96 @@ class BootstrapFormHelper extends FormHelper {
 		return $output;
 	}
 
-	// TODO checkbox / radio lists
+	/**
+	 * Returns an array of formatted OPTION/OPTGROUP elements
+	 * @access private
+	 * @return array
+	 */
+	function __selectOptions($elements = array(), $selected = null, $parents = array(), $showParents = null, $attributes = array()) {
+		$select = array();
+		$attributes = array_merge(array('escape' => true, 'style' => null, 'class' => null), $attributes);
+		$selectedIsEmpty = ($selected === '' || $selected === null);
+		$selectedIsArray = is_array($selected);
+
+		foreach ($elements as $name => $title) {
+			$htmlOptions = array();
+			if (is_array($title) && (!isset($title['name']) || !isset($title['value']))) {
+				if (!empty($name)) {
+					if ($attributes['style'] === 'checkbox') {
+						$select[] = $this->Html->tags['fieldsetend'];
+					} else {
+						$select[] = $this->Html->tags['optiongroupend'];
+					}
+					$parents[] = $name;
+				}
+				$select = array_merge($select, $this->__selectOptions(
+					$title, $selected, $parents, $showParents, $attributes
+				));
+
+				if (!empty($name)) {
+					$name = $attributes['escape'] ? h($name) : $name;
+					if ($attributes['style'] === 'checkbox') {
+						$select[] = sprintf($this->Html->tags['fieldsetstart'], $name);
+					} else {
+						$select[] = sprintf($this->Html->tags['optiongroup'], $name, '');
+					}
+				}
+				$name = null;
+			} elseif (is_array($title)) {
+				$htmlOptions = $title;
+				$name = $title['value'];
+				$title = $title['name'];
+				unset($htmlOptions['name'], $htmlOptions['value']);
+			}
+
+			if ($name !== null) {
+				if (
+					(!$selectedIsArray && !$selectedIsEmpty && (string)$selected == (string)$name) ||
+					($selectedIsArray && in_array($name, $selected))
+				) {
+					if ($attributes['style'] === 'checkbox') {
+						$htmlOptions['checked'] = true;
+					} else {
+						$htmlOptions['selected'] = 'selected';
+					}
+				}
+
+				if ($showParents || (!in_array($title, $parents))) {
+					$title = ($attributes['escape']) ? h($title) : $title;
+
+					if ($attributes['style'] === 'checkbox') {
+						$htmlOptions['value'] = $name;
+
+						$tagName = Inflector::camelize(
+							$this->model() . '_' . $this->field().'_'.Inflector::slug($name)
+						);
+						$htmlOptions['id'] = $tagName;
+
+						$name = $attributes['name'];
+
+						if (empty($attributes['class'])) {
+							$attributes['class'] = 'checkbox';
+						} elseif ($attributes['class'] === 'form-error') {
+							$attributes['class'] = 'checkbox ' . $attributes['class'];
+						}
+						$select[] = sprintf(
+							$this->Html->tags['checkboxmultiple'],
+							$name,
+							$this->_parseAttributes($htmlOptions),
+							$title
+						);
+					} else {
+						$select[] = sprintf(
+							$this->Html->tags['selectoption'],
+							$name, $this->_parseAttributes($htmlOptions), $title
+						);
+					}
+				}
+			}
+		}
+
+		return array_reverse($select, true);
+	}
+
+	// TODO radio list
 }
